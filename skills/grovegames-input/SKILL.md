@@ -1,0 +1,16 @@
+---
+name: grovegames-input
+description: Rules for pointer and keyboard input in game code with GroveGames.Input. Use when writing or reviewing a class that implements IPointerDownHandler, IKeyDownHandler or one of the other handler interfaces, registers with a dispatcher, or decides which of two things under the pointer gets the press.
+---
+
+# Using GroveGames.Input
+
+Rules for game code that uses this package. They hold in every game. The API is in the package's `README.md`.
+
+- Game code never reads the engine's input API. It implements handler interfaces and registers with `IPointerDispatcher` or `IKeyboardDispatcher`.
+- Register in `Initialize` and unregister in `Dispose`, with the same instance.
+- Priority decides who is asked first; higher wins. Give priorities as named constants in one place per game, never as numbers at the call site. Something that must block everything below it, such as a modal, registers above it.
+- Call `MarkHandled()` only when the press is really yours. A handler that marks every press handled blocks everything with a lower priority.
+- Only the handler that handled the press gets the move, the release and the cancel. Do not expect a release for a press you did not handle.
+- Implement `IPointerCancelHandler` whenever a press starts something that must be undone, such as a drag. A cancel arrives instead of a release when a second press starts or the owner is unregistered.
+- Handlers run inside the dispatch. Keep them short, and do not register or unregister a handler from inside `HandlePointerDown`.
