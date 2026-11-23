@@ -1,0 +1,23 @@
+{
+  "name": "com.grovegames.input",
+  "version": "0.0.0",
+  "displayName": "GroveGames.Input",
+  "description": "Prioritized pointer and keyboard events with handled state for .NET and Unity",
+  "unity": "2022.3",
+  "documentationUrl": "https://github.com/grovegs/Input",
+  "changelogUrl": "https://github.com/grovegs/Input/releases",
+  "licensesUrl": "https://github.com/grovegs/Input/blob/main/LICENSE",
+  "keywords": [
+    "input",
+    "pointer",
+    "keyboard",
+    "events"
+  ],
+  "author": {
+    "name": "Grove Games",
+    "url": "https://github.com/grovegs"
+  },
+  "dependencies": {
+    "com.unity.inputsystem": "1.20.1"
+  }
+}
