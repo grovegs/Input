@@ -22,7 +22,7 @@ public sealed class KeyboardDispatcherTests
     public void IsIdle_HandlerRegistered_IsFalse()
     {
         var dispatcher = new KeyboardDispatcher();
-        dispatcher.Register(new TestHandler("only", false, new List<string>()));
+        dispatcher.Register(new FakeHandler("only", false, new List<string>()));
 
         Assert.False(dispatcher.IsIdle);
     }
@@ -32,8 +32,8 @@ public sealed class KeyboardDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new KeyboardDispatcher();
-        dispatcher.Register(new TestHandler("low", false, calls), 0);
-        dispatcher.Register(new TestHandler("high", false, calls), 10);
+        dispatcher.Register(new FakeHandler("low", false, calls), 0);
+        dispatcher.Register(new FakeHandler("high", false, calls), 10);
 
         dispatcher.Press(Key.Escape);
 
@@ -45,8 +45,8 @@ public sealed class KeyboardDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new KeyboardDispatcher();
-        dispatcher.Register(new TestHandler("low", false, calls), 0);
-        dispatcher.Register(new TestHandler("high", true, calls), 10);
+        dispatcher.Register(new FakeHandler("low", false, calls), 0);
+        dispatcher.Register(new FakeHandler("high", true, calls), 10);
 
         dispatcher.Press(Key.Space);
 
@@ -58,7 +58,7 @@ public sealed class KeyboardDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new KeyboardDispatcher();
-        dispatcher.Register(new TestHandler("only", true, calls));
+        dispatcher.Register(new FakeHandler("only", true, calls));
 
         dispatcher.Press(Key.None);
 
@@ -70,8 +70,8 @@ public sealed class KeyboardDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new KeyboardDispatcher();
-        dispatcher.Register(new TestHandler("other", true, calls), 0);
-        dispatcher.Register(new TestHandler("owner", true, calls), 10);
+        dispatcher.Register(new FakeHandler("other", true, calls), 0);
+        dispatcher.Register(new FakeHandler("owner", true, calls), 10);
         dispatcher.Press(Key.A);
         calls.Clear();
 
@@ -86,7 +86,7 @@ public sealed class KeyboardDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new KeyboardDispatcher();
-        dispatcher.Register(new TestHandler("watcher", false, calls));
+        dispatcher.Register(new FakeHandler("watcher", false, calls));
         dispatcher.Press(Key.A);
         calls.Clear();
 
@@ -100,7 +100,7 @@ public sealed class KeyboardDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new KeyboardDispatcher();
-        dispatcher.Register(new TestHandler("owner", true, calls));
+        dispatcher.Register(new FakeHandler("owner", true, calls));
         dispatcher.Press(Key.A);
         calls.Clear();
 
@@ -115,7 +115,7 @@ public sealed class KeyboardDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new KeyboardDispatcher();
-        dispatcher.Register(new TestHandler("owner", true, calls));
+        dispatcher.Register(new FakeHandler("owner", true, calls));
         dispatcher.Press(Key.A);
         calls.Clear();
 
@@ -129,7 +129,7 @@ public sealed class KeyboardDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new KeyboardDispatcher();
-        dispatcher.Register(new TestHandler("owner", true, calls));
+        dispatcher.Register(new FakeHandler("owner", true, calls));
         dispatcher.Press(Key.A);
         dispatcher.Press(Key.F12);
         calls.Clear();
@@ -145,7 +145,7 @@ public sealed class KeyboardDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new KeyboardDispatcher();
-        var owner = new TestHandler("owner", true, calls);
+        var owner = new FakeHandler("owner", true, calls);
         dispatcher.Register(owner);
         dispatcher.Press(Key.A);
         calls.Clear();
@@ -161,7 +161,7 @@ public sealed class KeyboardDispatcherTests
     public void Press_OwnerHandlesOnlyDown_KeepsNoOwner()
     {
         var dispatcher = new KeyboardDispatcher();
-        var handler = new TestDownHandler();
+        var handler = new FakeDownHandler();
         dispatcher.Register(handler);
 
         dispatcher.Press(Key.A);
@@ -170,7 +170,7 @@ public sealed class KeyboardDispatcherTests
         Assert.True(dispatcher.IsIdle);
     }
 
-    private sealed class TestDownHandler : IKeyDownHandler
+    private sealed class FakeDownHandler : IKeyDownHandler
     {
         public void HandleKeyDown(ref KeyDownEvent keyEvent)
         {
@@ -178,13 +178,13 @@ public sealed class KeyboardDispatcherTests
         }
     }
 
-    private sealed class TestHandler : IKeyDownHandler, IKeyUpHandler
+    private sealed class FakeHandler : IKeyDownHandler, IKeyUpHandler
     {
         private readonly string _name;
         private readonly bool _handles;
         private readonly List<string> _calls;
 
-        public TestHandler(string name, bool handles, List<string> calls)
+        public FakeHandler(string name, bool handles, List<string> calls)
         {
             _name = name;
             _handles = handles;

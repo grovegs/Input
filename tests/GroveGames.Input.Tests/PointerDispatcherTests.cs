@@ -20,9 +20,9 @@ public sealed class PointerDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new PointerDispatcher();
-        dispatcher.Register(new TestHandler("low", false, calls), 0);
-        dispatcher.Register(new TestHandler("high", false, calls), 10);
-        dispatcher.Register(new TestHandler("middle", false, calls), 5);
+        dispatcher.Register(new FakeHandler("low", false, calls), 0);
+        dispatcher.Register(new FakeHandler("high", false, calls), 10);
+        dispatcher.Register(new FakeHandler("middle", false, calls), 5);
 
         dispatcher.Press(1, s_start);
 
@@ -34,8 +34,8 @@ public sealed class PointerDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new PointerDispatcher();
-        dispatcher.Register(new TestHandler("first", false, calls));
-        dispatcher.Register(new TestHandler("second", false, calls));
+        dispatcher.Register(new FakeHandler("first", false, calls));
+        dispatcher.Register(new FakeHandler("second", false, calls));
 
         dispatcher.Press(1, s_start);
 
@@ -47,8 +47,8 @@ public sealed class PointerDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new PointerDispatcher();
-        dispatcher.Register(new TestHandler("low", false, calls), 0);
-        dispatcher.Register(new TestHandler("high", true, calls), 10);
+        dispatcher.Register(new FakeHandler("low", false, calls), 0);
+        dispatcher.Register(new FakeHandler("high", true, calls), 10);
 
         dispatcher.Press(1, s_start);
 
@@ -60,7 +60,7 @@ public sealed class PointerDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new PointerDispatcher();
-        var handler = new TestHandler("only", false, calls);
+        var handler = new FakeHandler("only", false, calls);
         dispatcher.Register(handler);
         dispatcher.Register(handler, 10);
 
@@ -73,7 +73,7 @@ public sealed class PointerDispatcherTests
     public void Press_Event_CarriesPointerAndPosition()
     {
         var dispatcher = new PointerDispatcher();
-        var handler = new TestHandler("owner", true, new List<string>());
+        var handler = new FakeHandler("owner", true, new List<string>());
         dispatcher.Register(handler);
 
         dispatcher.Press(7, s_start);
@@ -87,8 +87,8 @@ public sealed class PointerDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new PointerDispatcher();
-        var owner = new TestHandler("owner", true, calls);
-        dispatcher.Register(new TestHandler("other", true, calls), 0);
+        var owner = new FakeHandler("owner", true, calls);
+        dispatcher.Register(new FakeHandler("other", true, calls), 0);
         dispatcher.Register(owner, 10);
         dispatcher.Press(1, s_start);
         calls.Clear();
@@ -105,7 +105,7 @@ public sealed class PointerDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new PointerDispatcher();
-        dispatcher.Register(new TestHandler("owner", true, calls));
+        dispatcher.Register(new FakeHandler("owner", true, calls));
         dispatcher.Press(1, s_start);
         calls.Clear();
 
@@ -119,7 +119,7 @@ public sealed class PointerDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new PointerDispatcher();
-        dispatcher.Register(new TestHandler("owner", true, calls));
+        dispatcher.Register(new FakeHandler("owner", true, calls));
 
         dispatcher.Move(s_next);
 
@@ -131,7 +131,7 @@ public sealed class PointerDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new PointerDispatcher();
-        var owner = new TestHandler("owner", true, calls);
+        var owner = new FakeHandler("owner", true, calls);
         dispatcher.Register(owner);
         dispatcher.Press(4, s_start);
         calls.Clear();
@@ -150,7 +150,7 @@ public sealed class PointerDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new PointerDispatcher();
-        dispatcher.Register(new TestHandler("watcher", false, calls));
+        dispatcher.Register(new FakeHandler("watcher", false, calls));
         dispatcher.Press(1, s_start);
         calls.Clear();
 
@@ -165,7 +165,7 @@ public sealed class PointerDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new PointerDispatcher();
-        dispatcher.Register(new TestHandler("owner", true, calls));
+        dispatcher.Register(new FakeHandler("owner", true, calls));
         dispatcher.Press(1, s_start);
         calls.Clear();
 
@@ -181,7 +181,7 @@ public sealed class PointerDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new PointerDispatcher();
-        dispatcher.Register(new TestHandler("owner", true, calls));
+        dispatcher.Register(new FakeHandler("owner", true, calls));
         dispatcher.Press(1, s_start);
         calls.Clear();
 
@@ -195,7 +195,7 @@ public sealed class PointerDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new PointerDispatcher();
-        var owner = new TestHandler("owner", true, calls);
+        var owner = new FakeHandler("owner", true, calls);
         dispatcher.Register(owner);
         dispatcher.Press(1, s_start);
         calls.Clear();
@@ -211,8 +211,8 @@ public sealed class PointerDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new PointerDispatcher();
-        var other = new TestHandler("other", false, calls);
-        dispatcher.Register(new TestHandler("owner", true, calls), 10);
+        var other = new FakeHandler("other", false, calls);
+        dispatcher.Register(new FakeHandler("owner", true, calls), 10);
         dispatcher.Register(other, 0);
         dispatcher.Press(1, s_start);
         calls.Clear();
@@ -228,7 +228,7 @@ public sealed class PointerDispatcherTests
     {
         var calls = new List<string>();
         var dispatcher = new PointerDispatcher();
-        dispatcher.Register(new TestDownHandler(calls));
+        dispatcher.Register(new FakeDownHandler(calls));
         dispatcher.Press(1, s_start);
         calls.Clear();
 
@@ -239,11 +239,11 @@ public sealed class PointerDispatcherTests
         Assert.Empty(calls);
     }
 
-    private sealed class TestDownHandler : IPointerDownHandler
+    private sealed class FakeDownHandler : IPointerDownHandler
     {
         private readonly List<string> _calls;
 
-        public TestDownHandler(List<string> calls)
+        public FakeDownHandler(List<string> calls)
         {
             _calls = calls;
         }
@@ -255,7 +255,7 @@ public sealed class PointerDispatcherTests
         }
     }
 
-    private sealed class TestHandler : IPointerDownHandler, IPointerMoveHandler, IPointerUpHandler, IPointerCancelHandler
+    private sealed class FakeHandler : IPointerDownHandler, IPointerMoveHandler, IPointerUpHandler, IPointerCancelHandler
     {
         private readonly string _name;
         private readonly bool _handles;
@@ -268,7 +268,7 @@ public sealed class PointerDispatcherTests
         public Vector2 Position => _position;
         public Vector2 Delta => _delta;
 
-        public TestHandler(string name, bool handles, List<string> calls)
+        public FakeHandler(string name, bool handles, List<string> calls)
         {
             _name = name;
             _handles = handles;
