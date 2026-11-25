@@ -11,7 +11,7 @@ namespace GroveGames.Input.Unity
             _target = target;
         }
 
-        public void PreFrameUpdate(float deltaTime)
+        public void PreFrameUpdate(DeltaTime deltaTime)
         {
             _target.Update();
         }
