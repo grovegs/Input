@@ -1,6 +1,6 @@
 {
   "name": "com.grovegames.input",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "displayName": "GroveGames.Input",
   "description": "Prioritized pointer and keyboard events with handled state for .NET and Unity",
   "unity": "2022.3",
