@@ -55,10 +55,18 @@ namespace GroveGames.Input.Unity
                 _dispatcher.Move(position);
             }
 
-            if (press.wasReleasedThisFrame)
+            if (!press.wasReleasedThisFrame)
             {
-                _dispatcher.Release(position);
+                return;
             }
+
+            if (pointer is Touchscreen touchscreen && touchscreen.primaryTouch.phase.ReadValue() == TouchPhase.Canceled)
+            {
+                _dispatcher.Cancel();
+                return;
+            }
+
+            _dispatcher.Release(position);
         }
     }
 }
