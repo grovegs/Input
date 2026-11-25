@@ -12,7 +12,7 @@ Rules for game code that uses this package. They hold in every game. The API is 
 - Priority decides who is asked first; higher wins. Give priorities as named constants in one place per game, never as numbers at the call site. Something that must block everything below it, such as a modal, registers above it.
 - Call `MarkHandled()` only when the press is really yours. A handler that marks every press handled blocks everything with a lower priority.
 - Only the handler that handled the press gets the move, the release and the cancel. Do not expect a release for a press you did not handle.
-- Implement `IPointerCancelHandler` whenever a press starts something that must be undone, such as a drag. A cancel arrives instead of a release when a second press starts or the owner is unregistered.
+- Implement `IPointerCancelHandler` whenever a press starts something that must be undone, such as a drag. A cancel arrives instead of a release when a second press starts, the owner is unregistered, or in Unity the system cancels the touch (an incoming call or the notification shade).
 - Handlers run inside the dispatch. Keep them short, and do not register or unregister a handler from inside `HandlePointerDown`.
 
 ## Unity

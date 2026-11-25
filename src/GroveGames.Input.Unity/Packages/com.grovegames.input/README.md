@@ -56,6 +56,7 @@ dispatcher.Release(new Vector2(140f, 310f));
 - Handlers with the same priority are asked in the order they registered.
 - Only the handler that handled the press gets the move, the release and the cancel, and only the ones it implements.
 - A new press while one is down cancels the first. Unregistering the owner cancels its press.
+- In Unity, a touch the system cancels (an incoming call, the notification shade) arrives as a cancel, not a release, so it never clicks.
 - `KeyboardDispatcher` works the same way with `Press(Key)`, `Release(Key)` and `ReleaseAll()`.
 
 An engine feeds a dispatcher from its own input. Positions are in whatever space the engine passes in.
