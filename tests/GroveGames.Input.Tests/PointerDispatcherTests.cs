@@ -239,6 +239,20 @@ public sealed class PointerDispatcherTests
         Assert.Empty(calls);
     }
 
+    [Fact]
+    public void Press_HandlerUnregistersItselfWhileHandling_GetsNoLaterEvents()
+    {
+        var calls = new List<string>();
+        var dispatcher = new PointerDispatcher();
+        dispatcher.Register(new FakeSelfUnregisteringHandler(dispatcher, calls));
+
+        dispatcher.Press(1, s_start);
+        dispatcher.Move(s_next);
+        dispatcher.Release(s_next);
+
+        Assert.Equal(new[] { "Down" }, calls);
+    }
+
     private sealed class FakeDownHandler : IPointerDownHandler
     {
         private readonly List<string> _calls;
@@ -252,6 +266,40 @@ public sealed class PointerDispatcherTests
         {
             _calls.Add("Down");
             pointerEvent.MarkHandled();
+        }
+    }
+
+    private sealed class FakeSelfUnregisteringHandler : IPointerDownHandler, IPointerMoveHandler, IPointerUpHandler, IPointerCancelHandler
+    {
+        private readonly PointerDispatcher _dispatcher;
+        private readonly List<string> _calls;
+
+        public FakeSelfUnregisteringHandler(PointerDispatcher dispatcher, List<string> calls)
+        {
+            _dispatcher = dispatcher;
+            _calls = calls;
+        }
+
+        public void HandlePointerDown(ref PointerDownEvent pointerEvent)
+        {
+            _calls.Add("Down");
+            pointerEvent.MarkHandled();
+            _dispatcher.Unregister(this);
+        }
+
+        public void HandlePointerMove(in PointerMoveEvent pointerEvent)
+        {
+            _calls.Add("Move");
+        }
+
+        public void HandlePointerUp(in PointerUpEvent pointerEvent)
+        {
+            _calls.Add("Up");
+        }
+
+        public void HandlePointerCancel(in PointerCancelEvent pointerEvent)
+        {
+            _calls.Add("Cancel");
         }
     }
 

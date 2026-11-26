@@ -170,11 +170,50 @@ public sealed class KeyboardDispatcherTests
         Assert.True(dispatcher.IsIdle);
     }
 
+    [Fact]
+    public void Press_HandlerUnregistersItselfWhileHandling_GetsNoKeyUp()
+    {
+        var calls = new List<string>();
+        var dispatcher = new KeyboardDispatcher();
+        dispatcher.Register(new FakeSelfUnregisteringHandler(dispatcher, calls));
+
+        dispatcher.Press(Key.A);
+        var isIdle = dispatcher.IsIdle;
+        dispatcher.Release(Key.A);
+
+        Assert.True(isIdle);
+        Assert.Equal(new[] { "Down.A" }, calls);
+    }
+
     private sealed class FakeDownHandler : IKeyDownHandler
     {
         public void HandleKeyDown(ref KeyDownEvent keyEvent)
         {
             keyEvent.MarkHandled();
+        }
+    }
+
+    private sealed class FakeSelfUnregisteringHandler : IKeyDownHandler, IKeyUpHandler
+    {
+        private readonly KeyboardDispatcher _dispatcher;
+        private readonly List<string> _calls;
+
+        public FakeSelfUnregisteringHandler(KeyboardDispatcher dispatcher, List<string> calls)
+        {
+            _dispatcher = dispatcher;
+            _calls = calls;
+        }
+
+        public void HandleKeyDown(ref KeyDownEvent keyEvent)
+        {
+            _calls.Add($"Down.{keyEvent.Key}");
+            keyEvent.MarkHandled();
+            _dispatcher.Unregister(this);
+        }
+
+        public void HandleKeyUp(in KeyUpEvent keyEvent)
+        {
+            _calls.Add($"Up.{keyEvent.Key}");
         }
     }
 

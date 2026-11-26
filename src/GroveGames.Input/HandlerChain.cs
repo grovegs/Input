@@ -14,7 +14,7 @@ internal sealed class HandlerChain<T> where T : class
         _entries = Array.Empty<HandlerChainEntry<T>>();
     }
 
-    public void Add(T handler, int priority)
+    public bool Contains(T handler)
     {
         var entries = _entries;
 
@@ -22,10 +22,21 @@ internal sealed class HandlerChain<T> where T : class
         {
             if (ReferenceEquals(entries[i].Handler, handler))
             {
-                return;
+                return true;
             }
         }
 
+        return false;
+    }
+
+    public void Add(T handler, int priority)
+    {
+        if (Contains(handler))
+        {
+            return;
+        }
+
+        var entries = _entries;
         var index = entries.Length;
 
         for (var i = 0; i < entries.Length; i++)
