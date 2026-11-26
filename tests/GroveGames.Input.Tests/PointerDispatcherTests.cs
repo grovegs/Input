@@ -253,6 +253,36 @@ public sealed class PointerDispatcherTests
         Assert.Equal(new[] { "Down" }, calls);
     }
 
+    [Fact]
+    public void Press_HandlerReregistersItselfWhileHandling_StillOwnsThePress()
+    {
+        var calls = new List<string>();
+        var dispatcher = new PointerDispatcher();
+        dispatcher.Register(new FakeReentrantHandler(dispatcher, FakeReentrantHandler.Reregister, calls));
+
+        dispatcher.Press(1, s_start);
+        dispatcher.Release(s_next);
+
+        Assert.Equal(new[] { "Down", "Up" }, calls);
+    }
+
+    [Fact]
+    public void Press_HandlerCancelsWhileHandling_GetsNothingFromTheNextPress()
+    {
+        var calls = new List<string>();
+        var dispatcher = new PointerDispatcher();
+        var handler = new FakeReentrantHandler(dispatcher, FakeReentrantHandler.CancelOnFirstDown, calls);
+        dispatcher.Register(handler);
+        dispatcher.Press(1, s_start);
+        calls.Clear();
+
+        dispatcher.Press(1, s_start);
+        dispatcher.Move(s_next);
+        dispatcher.Release(s_next);
+
+        Assert.Equal(new[] { "Down" }, calls);
+    }
+
     private sealed class FakeDownHandler : IPointerDownHandler
     {
         private readonly List<string> _calls;
@@ -285,6 +315,58 @@ public sealed class PointerDispatcherTests
             _calls.Add("Down");
             pointerEvent.MarkHandled();
             _dispatcher.Unregister(this);
+        }
+
+        public void HandlePointerMove(in PointerMoveEvent pointerEvent)
+        {
+            _calls.Add("Move");
+        }
+
+        public void HandlePointerUp(in PointerUpEvent pointerEvent)
+        {
+            _calls.Add("Up");
+        }
+
+        public void HandlePointerCancel(in PointerCancelEvent pointerEvent)
+        {
+            _calls.Add("Cancel");
+        }
+    }
+
+    private sealed class FakeReentrantHandler : IPointerDownHandler, IPointerMoveHandler, IPointerUpHandler, IPointerCancelHandler
+    {
+        public const int Reregister = 0;
+        public const int CancelOnFirstDown = 1;
+
+        private readonly PointerDispatcher _dispatcher;
+        private readonly int _action;
+        private readonly List<string> _calls;
+        private int _downCount;
+
+        public FakeReentrantHandler(PointerDispatcher dispatcher, int action, List<string> calls)
+        {
+            _dispatcher = dispatcher;
+            _action = action;
+            _calls = calls;
+            _downCount = 0;
+        }
+
+        public void HandlePointerDown(ref PointerDownEvent pointerEvent)
+        {
+            _calls.Add("Down");
+            _downCount++;
+
+            if (_action == Reregister)
+            {
+                pointerEvent.MarkHandled();
+                _dispatcher.Unregister(this);
+                _dispatcher.Register(this);
+            }
+            else if (_downCount == 1)
+            {
+                _dispatcher.Cancel();
+                pointerEvent.MarkHandled();
+            }
         }
 
         public void HandlePointerMove(in PointerMoveEvent pointerEvent)

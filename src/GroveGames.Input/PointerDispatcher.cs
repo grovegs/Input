@@ -43,6 +43,7 @@ public sealed class PointerDispatcher : IPointerDispatcher
     public void Press(int pointerId, Vector2 position)
     {
         Cancel();
+        Clear();
         _isDown = true;
         _pointerId = pointerId;
         _position = position;

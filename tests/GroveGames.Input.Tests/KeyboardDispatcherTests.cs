@@ -185,6 +185,19 @@ public sealed class KeyboardDispatcherTests
         Assert.Equal(new[] { "Down.A" }, calls);
     }
 
+    [Fact]
+    public void Press_HandlerPressesTheSameKeyWhileHandling_BecomesIdleAfterUnregister()
+    {
+        var dispatcher = new KeyboardDispatcher();
+        var handler = new FakeNestedPressHandler(dispatcher);
+        dispatcher.Register(handler);
+        dispatcher.Press(Key.A);
+
+        dispatcher.Unregister(handler);
+
+        Assert.True(dispatcher.IsIdle);
+    }
+
     private sealed class FakeDownHandler : IKeyDownHandler
     {
         public void HandleKeyDown(ref KeyDownEvent keyEvent)
@@ -214,6 +227,36 @@ public sealed class KeyboardDispatcherTests
         public void HandleKeyUp(in KeyUpEvent keyEvent)
         {
             _calls.Add($"Up.{keyEvent.Key}");
+        }
+    }
+
+    private sealed class FakeNestedPressHandler : IKeyDownHandler, IKeyUpHandler
+    {
+        private readonly KeyboardDispatcher _dispatcher;
+        private bool _isPressing;
+
+        public FakeNestedPressHandler(KeyboardDispatcher dispatcher)
+        {
+            _dispatcher = dispatcher;
+            _isPressing = false;
+        }
+
+        public void HandleKeyDown(ref KeyDownEvent keyEvent)
+        {
+            keyEvent.MarkHandled();
+
+            if (_isPressing)
+            {
+                return;
+            }
+
+            _isPressing = true;
+            _dispatcher.Press(keyEvent.Key);
+            _isPressing = false;
+        }
+
+        public void HandleKeyUp(in KeyUpEvent keyEvent)
+        {
         }
     }
 
