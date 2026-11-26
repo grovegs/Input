@@ -43,6 +43,7 @@ public sealed class PointerDispatcher : IPointerDispatcher
     public void Press(int pointerId, Vector2 position)
     {
         Cancel();
+        Clear();
         _isDown = true;
         _pointerId = pointerId;
         _position = position;
@@ -56,6 +57,11 @@ public sealed class PointerDispatcher : IPointerDispatcher
 
             if (downEvent.IsHandled)
             {
+                if (_downChain.Entries != entries && !_downChain.Contains(handler))
+                {
+                    return;
+                }
+
                 _owner = handler;
                 _moveOwner = handler as IPointerMoveHandler;
                 _upOwner = handler as IPointerUpHandler;

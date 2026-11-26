@@ -61,10 +61,19 @@ public sealed class KeyboardDispatcher : IKeyboardDispatcher
 
             if (downEvent.IsHandled)
             {
+                if (_downChain.Entries != entries && !_downChain.Contains(handler))
+                {
+                    return;
+                }
+
                 if (handler is IKeyUpHandler upHandler)
                 {
+                    if (_owners[index] == null)
+                    {
+                        _ownedCount++;
+                    }
+
                     _owners[index] = upHandler;
-                    _ownedCount++;
                 }
 
                 return;

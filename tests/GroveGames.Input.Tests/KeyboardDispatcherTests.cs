@@ -170,11 +170,93 @@ public sealed class KeyboardDispatcherTests
         Assert.True(dispatcher.IsIdle);
     }
 
+    [Fact]
+    public void Press_HandlerUnregistersItselfWhileHandling_GetsNoKeyUp()
+    {
+        var calls = new List<string>();
+        var dispatcher = new KeyboardDispatcher();
+        dispatcher.Register(new FakeSelfUnregisteringHandler(dispatcher, calls));
+
+        dispatcher.Press(Key.A);
+        var isIdle = dispatcher.IsIdle;
+        dispatcher.Release(Key.A);
+
+        Assert.True(isIdle);
+        Assert.Equal(new[] { "Down.A" }, calls);
+    }
+
+    [Fact]
+    public void Press_HandlerPressesTheSameKeyWhileHandling_BecomesIdleAfterUnregister()
+    {
+        var dispatcher = new KeyboardDispatcher();
+        var handler = new FakeNestedPressHandler(dispatcher);
+        dispatcher.Register(handler);
+        dispatcher.Press(Key.A);
+
+        dispatcher.Unregister(handler);
+
+        Assert.True(dispatcher.IsIdle);
+    }
+
     private sealed class FakeDownHandler : IKeyDownHandler
     {
         public void HandleKeyDown(ref KeyDownEvent keyEvent)
         {
             keyEvent.MarkHandled();
+        }
+    }
+
+    private sealed class FakeSelfUnregisteringHandler : IKeyDownHandler, IKeyUpHandler
+    {
+        private readonly KeyboardDispatcher _dispatcher;
+        private readonly List<string> _calls;
+
+        public FakeSelfUnregisteringHandler(KeyboardDispatcher dispatcher, List<string> calls)
+        {
+            _dispatcher = dispatcher;
+            _calls = calls;
+        }
+
+        public void HandleKeyDown(ref KeyDownEvent keyEvent)
+        {
+            _calls.Add($"Down.{keyEvent.Key}");
+            keyEvent.MarkHandled();
+            _dispatcher.Unregister(this);
+        }
+
+        public void HandleKeyUp(in KeyUpEvent keyEvent)
+        {
+            _calls.Add($"Up.{keyEvent.Key}");
+        }
+    }
+
+    private sealed class FakeNestedPressHandler : IKeyDownHandler, IKeyUpHandler
+    {
+        private readonly KeyboardDispatcher _dispatcher;
+        private bool _isPressing;
+
+        public FakeNestedPressHandler(KeyboardDispatcher dispatcher)
+        {
+            _dispatcher = dispatcher;
+            _isPressing = false;
+        }
+
+        public void HandleKeyDown(ref KeyDownEvent keyEvent)
+        {
+            keyEvent.MarkHandled();
+
+            if (_isPressing)
+            {
+                return;
+            }
+
+            _isPressing = true;
+            _dispatcher.Press(keyEvent.Key);
+            _isPressing = false;
+        }
+
+        public void HandleKeyUp(in KeyUpEvent keyEvent)
+        {
         }
     }
 
