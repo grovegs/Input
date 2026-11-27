@@ -78,7 +78,7 @@ namespace GroveGames.Input.Unity
                     _dispatcher.Press(key);
                 }
 
-                if (control.wasReleasedThisFrame)
+                if (control.wasReleasedThisFrame && !control.isPressed)
                 {
                     _dispatcher.Release(key);
                 }

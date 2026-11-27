@@ -9,8 +9,8 @@ Rules for game code that uses this package. They hold in every game. The API is 
 
 - Game code never reads the engine's input API. It implements handler interfaces and registers with `IPointerDispatcher` or `IKeyboardDispatcher`.
 - Register in `Initialize` and unregister in `Dispose`, with the same instance.
-- Priority decides who is asked first; higher wins. Give priorities as named constants in one place per game, never as numbers at the call site. Something that must block everything below it, such as a modal, registers above it.
+- Priority decides who is asked first; higher wins. Registering again does not change it. Give priorities as named constants in one place per game, never as numbers at the call site. Something that must block everything below it, such as a modal, registers above it.
 - Call `MarkHandled()` only when the press is really yours. A handler that marks every press handled blocks everything with a lower priority.
 - Only the handler that handled the press gets the move, the release and the cancel. Do not expect a release for a press you did not handle.
-- Implement `IPointerCancelHandler` whenever a press starts something that must be undone, such as a drag. A cancel arrives instead of a release when a second press starts, the owner is unregistered, or in Unity the system cancels the touch (an incoming call or the notification shade).
+- Implement `IPointerCancelHandler` whenever a press starts something that must be undone, such as a drag. A cancel arrives instead of a release when a second press starts, the owner is unregistered, or in Unity the system cancels the touch (an incoming call or the notification shade) or the app loses focus.
 - Handlers run inside the dispatch, so keep them short. A handler that unregisters itself inside `HandlePointerDown` or `HandleKeyDown` does not own the press and gets no later events for it. Do not call `Press`, `Release` or `Cancel` on a dispatcher from inside a handler.
