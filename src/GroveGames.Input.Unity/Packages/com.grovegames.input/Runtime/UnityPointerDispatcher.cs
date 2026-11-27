@@ -1,17 +1,24 @@
+using System;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 
 namespace GroveGames.Input.Unity
 {
-    public sealed class UnityPointerDispatcher : IPointerDispatcher
+    public sealed class UnityPointerDispatcher : IPointerDispatcher, IDisposable
     {
         private readonly PointerDispatcher _dispatcher;
+        private readonly Action<InputDevice, InputDeviceChange> _deviceChanged;
         private Pointer _pressedPointer;
+        private TouchControl _touch;
         private int _touchId;
+        private System.Numerics.Vector2 _position;
+        private bool _disposed;
 
         public UnityPointerDispatcher()
         {
             _dispatcher = new PointerDispatcher();
+            _deviceChanged = OnDeviceChange;
+            InputSystem.onDeviceChange += _deviceChanged;
         }
 
         public void Register(IPointerDownHandler handler, int priority = 0)
@@ -44,16 +51,63 @@ namespace GroveGames.Input.Unity
 
             var pointer = Pointer.current;
 
-            if (pointer == null || !pointer.wasUpdatedThisFrame || !pointer.press.wasPressedThisFrame)
+            if (pointer == null || !pointer.wasUpdatedThisFrame)
             {
                 return;
             }
 
-            _pressedPointer = pointer;
-            _touchId = pointer is Touchscreen touchscreen ? touchscreen.primaryTouch.touchId.ReadValue() : 0;
-            _dispatcher.Press(pointer.deviceId, ToVector(pointer.position.ReadValue()));
+            if (pointer is Touchscreen touchscreen)
+            {
+                BeginTouch(touchscreen);
+                return;
+            }
 
+            if (!pointer.press.wasPressedThisFrame)
+            {
+                return;
+            }
+
+            Begin(pointer, null, 0, ToVector(pointer.position.ReadValue()));
             UpdatePress(pointer, true);
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            InputSystem.onDeviceChange -= _deviceChanged;
+        }
+
+        private void BeginTouch(Touchscreen touchscreen)
+        {
+            var touches = touchscreen.touches;
+
+            for (var i = 0; i < touches.Count; i++)
+            {
+                var touch = touches[i];
+
+                if (!touch.press.wasPressedThisFrame)
+                {
+                    continue;
+                }
+
+                Begin(touchscreen, touch, touch.touchId.ReadValue(), ToVector(touch.position.ReadValue()));
+                UpdateTouch(true);
+                return;
+            }
+        }
+
+        private void Begin(Pointer pointer, TouchControl touch, int touchId, System.Numerics.Vector2 position)
+        {
+            _pressedPointer = pointer;
+            _touch = touch;
+            _touchId = touchId;
+            _position = position;
+            _dispatcher.Press(pointer.deviceId, position);
         }
 
         private void UpdatePress(Pointer pointer, bool isPressFrame)
@@ -69,9 +123,9 @@ namespace GroveGames.Input.Unity
                 return;
             }
 
-            if (pointer is Touchscreen touchscreen)
+            if (_touch != null)
             {
-                UpdateTouch(touchscreen);
+                UpdateTouch(isPressFrame);
                 return;
             }
 
@@ -80,7 +134,7 @@ namespace GroveGames.Input.Unity
 
             if (press.isPressed && !(press.wasReleasedThisFrame && !isPressFrame))
             {
-                _dispatcher.Move(position);
+                Move(position);
                 return;
             }
 
@@ -94,50 +148,52 @@ namespace GroveGames.Input.Unity
 
             if (!isPressFrame && press.wasPressedThisFrame && press.isPressed)
             {
-                _pressedPointer = pointer;
-                _touchId = 0;
-                _dispatcher.Press(pointer.deviceId, position);
+                Begin(pointer, null, 0, position);
             }
         }
 
-        private void UpdateTouch(Touchscreen touchscreen)
+        private void UpdateTouch(bool isPressFrame)
         {
-            var touches = touchscreen.touches;
+            var touch = _touch;
+            var press = touch.press;
 
-            for (var i = 0; i < touches.Count; i++)
+            var phase = touch.phase.ReadValue();
+
+            if (touch.touchId.ReadValue() != _touchId || (!isPressFrame && press.wasReleasedThisFrame && press.wasPressedThisFrame))
             {
-                var touch = touches[i];
-
-                if (touch.touchId.ReadValue() != _touchId)
-                {
-                    continue;
-                }
-
-                var position = ToVector(touch.position.ReadValue());
-
-                switch (touch.phase.ReadValue())
-                {
-                    case TouchPhase.Began:
-                    case TouchPhase.Moved:
-                    case TouchPhase.Stationary:
-                        _dispatcher.Move(position);
-                        return;
-                    case TouchPhase.Ended:
-                        _dispatcher.Move(position);
-                        End(true, position);
-                        return;
-                    default:
-                        End(false, default);
-                        return;
-                }
+                End(phase != TouchPhase.None, _position);
+                return;
             }
 
-            End(false, default);
+            var position = ToVector(touch.position.ReadValue());
+
+            switch (phase)
+            {
+                case TouchPhase.Began:
+                case TouchPhase.Moved:
+                case TouchPhase.Stationary:
+                    Move(position);
+                    return;
+                case TouchPhase.Ended:
+                    Move(position);
+                    End(true, position);
+                    return;
+                default:
+                    End(false, default);
+                    return;
+            }
+        }
+
+        private void Move(System.Numerics.Vector2 position)
+        {
+            _position = position;
+            _dispatcher.Move(position);
         }
 
         private void End(bool isRelease, System.Numerics.Vector2 position)
         {
             _pressedPointer = null;
+            _touch = null;
             _touchId = 0;
 
             if (isRelease)
@@ -147,6 +203,14 @@ namespace GroveGames.Input.Unity
             else
             {
                 _dispatcher.Cancel();
+            }
+        }
+
+        private void OnDeviceChange(InputDevice device, InputDeviceChange change)
+        {
+            if (_pressedPointer != null && ReferenceEquals(device, _pressedPointer) && (change == InputDeviceChange.SoftReset || change == InputDeviceChange.HardReset))
+            {
+                End(false, default);
             }
         }
 

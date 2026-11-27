@@ -11,7 +11,7 @@ namespace GroveGames.Input.Unity.Tests
         public void Update_TouchEnded_Releases()
         {
             InputSystem.AddDevice<Touchscreen>();
-            var dispatcher = new UnityPointerDispatcher();
+            using var dispatcher = new UnityPointerDispatcher();
             var handler = new FakePointerHandler();
             dispatcher.Register(handler);
 
@@ -29,7 +29,7 @@ namespace GroveGames.Input.Unity.Tests
         public void Update_TouchCanceled_CancelsInsteadOfReleasing()
         {
             var touchscreen = InputSystem.AddDevice<Touchscreen>();
-            var dispatcher = new UnityPointerDispatcher();
+            using var dispatcher = new UnityPointerDispatcher();
             var handler = new FakePointerHandler();
             dispatcher.Register(handler);
 
@@ -48,7 +48,7 @@ namespace GroveGames.Input.Unity.Tests
         public void Update_FirstOfTwoFingersLifts_ReleasesAtOnce()
         {
             InputSystem.AddDevice<Touchscreen>();
-            var dispatcher = new UnityPointerDispatcher();
+            using var dispatcher = new UnityPointerDispatcher();
             var handler = new FakePointerHandler();
             dispatcher.Register(handler);
 
@@ -66,7 +66,7 @@ namespace GroveGames.Input.Unity.Tests
         public void Update_SecondFingerMoves_DoesNotMoveThePress()
         {
             InputSystem.AddDevice<Touchscreen>();
-            var dispatcher = new UnityPointerDispatcher();
+            using var dispatcher = new UnityPointerDispatcher();
             var handler = new FakePointerHandler();
             dispatcher.Register(handler);
 
@@ -84,7 +84,7 @@ namespace GroveGames.Input.Unity.Tests
         public void Update_TwoFingersCanceledTogether_Cancels()
         {
             var touchscreen = InputSystem.AddDevice<Touchscreen>();
-            var dispatcher = new UnityPointerDispatcher();
+            using var dispatcher = new UnityPointerDispatcher();
             var handler = new FakePointerHandler();
             dispatcher.Register(handler);
 
@@ -105,7 +105,7 @@ namespace GroveGames.Input.Unity.Tests
         public void Update_FocusLostWhileMouseHeld_Cancels()
         {
             var mouse = InputSystem.AddDevice<Mouse>();
-            var dispatcher = new UnityPointerDispatcher();
+            using var dispatcher = new UnityPointerDispatcher();
             var handler = new FakePointerHandler();
             dispatcher.Register(handler);
 
@@ -126,7 +126,7 @@ namespace GroveGames.Input.Unity.Tests
         public void Update_FocusLostWhileTouching_Cancels()
         {
             InputSystem.AddDevice<Touchscreen>();
-            var dispatcher = new UnityPointerDispatcher();
+            using var dispatcher = new UnityPointerDispatcher();
             var handler = new FakePointerHandler();
             dispatcher.Register(handler);
 
@@ -147,7 +147,7 @@ namespace GroveGames.Input.Unity.Tests
         public void Update_MouseReleasedAndPressedInOneFrame_ReleasesThenPresses()
         {
             var mouse = InputSystem.AddDevice<Mouse>();
-            var dispatcher = new UnityPointerDispatcher();
+            using var dispatcher = new UnityPointerDispatcher();
             var handler = new FakePointerHandler();
             dispatcher.Register(handler);
 
@@ -170,7 +170,7 @@ namespace GroveGames.Input.Unity.Tests
         {
             InputSystem.AddDevice<Touchscreen>();
             var mouse = InputSystem.AddDevice<Mouse>();
-            var dispatcher = new UnityPointerDispatcher();
+            using var dispatcher = new UnityPointerDispatcher();
             var handler = new FakePointerHandler();
             dispatcher.Register(handler);
 
@@ -183,6 +183,67 @@ namespace GroveGames.Input.Unity.Tests
             dispatcher.Update();
 
             Assert.That(handler.Log, Is.EqualTo("D U(10,10) "));
+        }
+
+        [Test]
+        public void Update_FingerLiftsAndAnotherBeginsInOneUpdate_ReleasesThenPresses()
+        {
+            InputSystem.AddDevice<Touchscreen>();
+            using var dispatcher = new UnityPointerDispatcher();
+            var handler = new FakePointerHandler();
+            dispatcher.Register(handler);
+
+            BeginTouch(1, new Vector2(10f, 10f));
+            dispatcher.Update();
+            EndTouch(1, new Vector2(10f, 10f), queueEventOnly: true);
+            BeginTouch(2, new Vector2(500f, 500f), queueEventOnly: true);
+            InputSystem.Update();
+            dispatcher.Update();
+            EndTouch(2, new Vector2(500f, 500f));
+            dispatcher.Update();
+
+            Assert.That(handler.Log, Is.EqualTo("D U(10,10) D U(500,500) "));
+        }
+
+        [Test]
+        public void Update_TrackedFingerLiftsWhileAnotherStaysDown_NextTapPresses()
+        {
+            InputSystem.AddDevice<Touchscreen>();
+            using var dispatcher = new UnityPointerDispatcher();
+            var handler = new FakePointerHandler();
+            dispatcher.Register(handler);
+
+            BeginTouch(1, new Vector2(10f, 10f));
+            dispatcher.Update();
+            BeginTouch(2, new Vector2(500f, 500f));
+            dispatcher.Update();
+            EndTouch(1, new Vector2(10f, 10f));
+            dispatcher.Update();
+            BeginTouch(3, new Vector2(200f, 200f));
+            dispatcher.Update();
+            EndTouch(3, new Vector2(200f, 200f));
+            dispatcher.Update();
+
+            Assert.That(handler.Log, Is.EqualTo("D U(10,10) D U(200,200) "));
+        }
+
+        [Test]
+        public void Update_MouseResetWhileHeld_Cancels()
+        {
+            var mouse = InputSystem.AddDevice<Mouse>();
+            using var dispatcher = new UnityPointerDispatcher();
+            var handler = new FakePointerHandler();
+            dispatcher.Register(handler);
+
+            Press(mouse.leftButton);
+            dispatcher.Update();
+            InputSystem.Update();
+            dispatcher.Update();
+            InputSystem.ResetDevice(mouse);
+            dispatcher.Update();
+
+            Assert.That(handler.UpCount, Is.EqualTo(0));
+            Assert.That(handler.CancelCount, Is.EqualTo(1));
         }
 
         private sealed class FakePointerHandler : IPointerDownHandler, IPointerMoveHandler, IPointerUpHandler, IPointerCancelHandler

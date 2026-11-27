@@ -73,22 +73,12 @@ namespace GroveGames.Input.Unity
                     continue;
                 }
 
-                var wasPressed = control.wasPressedThisFrame;
-                var wasReleased = control.wasReleasedThisFrame;
-
-                if (wasPressed && wasReleased && control.isPressed)
-                {
-                    _dispatcher.Release(key);
-                    _dispatcher.Press(key);
-                    continue;
-                }
-
-                if (wasPressed)
+                if (control.wasPressedThisFrame)
                 {
                     _dispatcher.Press(key);
                 }
 
-                if (wasReleased)
+                if (control.wasReleasedThisFrame && !control.isPressed)
                 {
                     _dispatcher.Release(key);
                 }
