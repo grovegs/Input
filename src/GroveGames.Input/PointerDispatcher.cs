@@ -53,6 +53,12 @@ public sealed class PointerDispatcher : IPointerDispatcher
         for (var i = 0; i < entries.Length; i++)
         {
             var handler = entries[i].Handler;
+
+            if (_downChain.Entries != entries && !_downChain.Contains(handler))
+            {
+                continue;
+            }
+
             handler.HandlePointerDown(ref downEvent);
 
             if (downEvent.IsHandled)

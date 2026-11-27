@@ -283,6 +283,37 @@ public sealed class PointerDispatcherTests
         Assert.Equal(new[] { "Down" }, calls);
     }
 
+    [Fact]
+    public void Press_EarlierHandlerUnregistersALaterOne_DoesNotAskIt()
+    {
+        var calls = new List<string>();
+        var dispatcher = new PointerDispatcher();
+        var later = new FakeDownHandler(calls);
+        dispatcher.Register(later, 0);
+        dispatcher.Register(new FakeUnregisteringOtherHandler(dispatcher, later), 10);
+
+        dispatcher.Press(1, s_start);
+
+        Assert.Empty(calls);
+    }
+
+    private sealed class FakeUnregisteringOtherHandler : IPointerDownHandler
+    {
+        private readonly PointerDispatcher _dispatcher;
+        private readonly IPointerDownHandler _other;
+
+        public FakeUnregisteringOtherHandler(PointerDispatcher dispatcher, IPointerDownHandler other)
+        {
+            _dispatcher = dispatcher;
+            _other = other;
+        }
+
+        public void HandlePointerDown(ref PointerDownEvent pointerEvent)
+        {
+            _dispatcher.Unregister(_other);
+        }
+    }
+
     private sealed class FakeDownHandler : IPointerDownHandler
     {
         private readonly List<string> _calls;

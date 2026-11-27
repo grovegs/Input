@@ -53,10 +53,12 @@ dispatcher.Move(new Vector2(140f, 310f));
 dispatcher.Release(new Vector2(140f, 310f));
 ```
 
-- Handlers with the same priority are asked in the order they registered.
+- Handlers with the same priority are asked in the order they registered. Registering a handler that is already registered does nothing, even with another priority; unregister it first to change its priority.
+- A handler unregistered while a press is being dispatched is not asked about that press.
 - Only the handler that handled the press gets the move, the release and the cancel, and only the ones it implements.
 - A new press while one is down cancels the first. Unregistering the owner cancels its press, and a handler that unregisters while handling the press does not become its owner.
-- In Unity, a touch the system cancels (an incoming call, the notification shade) arrives as a cancel, not a release, so it never clicks.
+- In Unity, a press follows the device that started it and, on a touchscreen, the finger that started it. Other fingers and pointers neither move nor end it, and they start no press until it ends; the press ends when that finger lifts, even while others stay down. `PointerId` is the device id, so every finger of a touchscreen has the same one.
+- In Unity, a press the system cancels (an incoming call, the notification shade) and a press whose device is reset, disabled or removed, as when the app loses focus, arrive as a cancel, not a release, so they never click. A release and a new press within one frame arrive as both, in that order.
 - `KeyboardDispatcher` works the same way with `Press(Key)`, `Release(Key)` and `ReleaseAll()`.
 
 An engine feeds a dispatcher from its own input. Positions are in whatever space the engine passes in.
